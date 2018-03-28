@@ -97,9 +97,12 @@ class VisualOdometry:
 
 		# Pass the 3D points up to the object to later be plotted.
 		points_3d = np.array(points_3d).astype(int)
-		print(points_3d)
+		# print(points_3d)
 		self.points_3D = set()
 		for point in points_3d:
+			# print("point before rotation: " + str(point))
+			point = self.cur_R.dot(point)
+			# print("point after rotation: " + str(point))
 			my_tuple = (point[0], point[2])
 			# print(my_tuple)
 			self.points_3D.add(my_tuple)

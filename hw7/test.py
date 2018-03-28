@@ -38,6 +38,8 @@ videoWriter = cv2.VideoWriter(
     'ECEn631_Visual_Odometry.avi', cv2.VideoWriter_fourcc('M','P','E','G'), 20.0, size, isColor=True)
 
 img_id = 0
+prevPoints = []
+prevt = None
 
 # for img_id in xrange(4541):
 while(1):
@@ -60,9 +62,15 @@ while(1):
 	if(img_id > 2):
 		# x, y, z = cur_t[0], cur_t[1], cur_t[2]
 		for point in vo.points_3D:
-			print(point)
+			# print(point)
 			draw_x, draw_y = point[0] + 300 + cur_t[0], point[1]+300 + cur_t[2]
 			cv2.circle(traj, (draw_x,draw_y), 2, (img_id*255/4540,255-img_id*255/4540,0), 1)
+		for point in prevPoints:
+			draw_x, draw_y = point[0] + 300 + prevt[0], point[1]+300 + prevt[2]
+			cv2.circle(traj, (draw_x,draw_y), 2, (0,0,0), 1)
+		prevPoints = vo.points_3D
+		prevt = cur_t
+
 
 	else:
 		x, y, z = 0., 0., 0.
