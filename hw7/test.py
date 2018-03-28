@@ -38,9 +38,9 @@ videoWriter = cv2.VideoWriter(
     'ECEn631_Visual_Odometry.avi', cv2.VideoWriter_fourcc('M','P','E','G'), 20.0, size, isColor=True)
 
 img_id = 0
-FORGET_FACTOR = 1024
+FORGET_FACTOR = 32
 prev_points = [None] * FORGET_FACTOR
-prev_t = [None] * FORGET_FACTOR
+prev_t = [None] * FORGET_FACTOR * 4
 
 # for img_id in xrange(4541):
 while(1):
@@ -64,6 +64,7 @@ while(1):
 		# Shift everything by one position
 		for i in range(FORGET_FACTOR-1, 0, -1):
 			prev_points[i] = prev_points[i-1]
+		for i in range(FORGET_FACTOR*4-1, 0, -1):
 			prev_t[i] = prev_t[i-1]
 		# Update location 0
 		prev_points[0] = vo.points_3D
@@ -78,26 +79,26 @@ while(1):
 				distance = np.linalg.norm(prev_t[i] - point)
 				threshold = 200
 				if (distance < threshold):
-					draw_x, draw_y = point[0] + 50 + prev_t[i][0], point[1]+100 + prev_t[i][2]
+					draw_x, draw_y = point[0] + 100 + prev_t[i][0], point[1]+100 + prev_t[i][2]
 					draw_x *= 2
 					draw_y *= 2
-					cv2.circle(traj, (draw_x,draw_y), 2, (max(255/(i/4),64),min(1024-i,64),max(255/(i/4), 64), 1))
+					cv2.circle(traj, (draw_x,draw_y), 2, (max(255-(i*8),32),max(255-(i*8),32),min(i,32)), 1)
 		# Draw most recent 3d points
 		for point in prev_points[0]:
 			distance = np.linalg.norm(cur_t - point)
 			threshold = 200
 			if (distance < threshold):
-				draw_x, draw_y = point[0] + 50 + prev_t[0][0], point[1]+100 + prev_t[0][2]
+				draw_x, draw_y = point[0] + 100 + prev_t[0][0], point[1]+100 + prev_t[0][2]
 				draw_x *= 2
 				draw_y *= 2
-				cv2.circle(traj, (draw_x,draw_y), 2, (255,0,255), 1)
+				cv2.circle(traj, (draw_x,draw_y), 2, (255,255,0), 1)
 
 
-		for i in range(FORGET_FACTOR-1, 0, -1):
+		for i in range(FORGET_FACTOR*4-1, 0, -1):
 			if prev_t[i] is None:
 				continue
 			# print(point)
-			draw_x = prev_t[i][0] + 50
+			draw_x = prev_t[i][0] + 100
 			draw_y = prev_t[i][2] + 100
 			draw_x *= 2
 			draw_y *= 2
@@ -126,7 +127,7 @@ while(1):
 	for i in px_ref:
 		# print(i)
 		coord = (int(i[0]),int(i[1]))
-		img = cv2.circle(img,coord,3,(255,0,255),-1)
+		img = cv2.circle(img,coord,3,(255,255,0),-1)
 
 
 	text = "Coordinates: x=%2fm y=%2fm z=%2fm"%(x,y,z)
