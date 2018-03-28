@@ -50,6 +50,9 @@ class VisualOdometry:
 		self.trueX, self.trueY, self.trueZ = 0, 0, 0
 		self.detector = cv2.FastFeatureDetector_create(threshold=8, nonmaxSuppression=True)
 		self.points_3D = None
+		self.px_ref_window = None
+		self.px_cur_window = None
+
 		# with open(annotations) as f:
 		# 	self.annotations = f.readlines()
 
@@ -70,6 +73,9 @@ class VisualOdometry:
 		self.px_ref = np.array([x.pt for x in self.px_ref], dtype=np.float32)
 		self.frame_stage = STAGE_SECOND_FRAME
 
+		self.px_ref_window = np.zeros(shape=(0,2))
+		self.px_cur_window = np.zeros(shape=(0,2))
+
 	def processSecondFrame(self):
 		self.px_ref, self.px_cur = featureTracking(self.last_frame, self.new_frame, self.px_ref)
 		E, mask = cv2.findEssentialMat(self.px_cur, self.px_ref, focal=self.focal, pp=self.pp, method=cv2.RANSAC, prob=0.999, threshold=1.0)
@@ -81,13 +87,13 @@ class VisualOdometry:
 		# TODO: Try out mask
 		self.px_ref, self.px_cur = featureTracking(self.last_frame, self.new_frame, self.px_ref)
 
-		A = np.zeros(shape=(0,2))
-		B = np.zeros(shape=(0,2))
+		self.px_ref_window = np.zeros(shape=(0,2))
+		self.px_cur_window = np.zeros(shape=(0,2))
 
 		for i in range(0, len(self.px_ref)):
 			if(self.px_ref[i][1] <= 400 and self.px_ref[i][1] >= 320):
-				A = np.append(A, np.array([[self.px_ref[i][0],self.px_ref[i][1]]]), axis=0)
-				B = np.append(B, np.array([[self.px_cur[i][0],self.px_cur[i][1]]]), axis=0)
+				self.px_ref_window = np.append(self.px_ref_window, np.array([[self.px_ref[i][0],self.px_ref[i][1]]]), axis=0)
+				self.px_cur_window = np.append(self.px_cur_window, np.array([[self.px_cur[i][0],self.px_cur[i][1]]]), axis=0)
 
 		E, mask = cv2.findEssentialMat(self.px_cur, self.px_ref, focal=self.focal, pp=self.pp, method=cv2.RANSAC, prob=0.999, threshold=1.0)
 		_, R, t, mask = cv2.recoverPose(E, self.px_cur, self.px_ref, focal=self.focal, pp = self.pp)
@@ -101,7 +107,7 @@ class VisualOdometry:
 		P_1 = np.dot(self.cam.K, M_1)
 		P_2 = np.dot(self.cam.K, M_2)
 
-		points_4d_homogeneous = cv2.triangulatePoints(P_1, P_2, A.T, B.T)
+		points_4d_homogeneous = cv2.triangulatePoints(P_1, P_2, self.px_ref_window.T, self.px_cur_window.T)
 		points_4d = points_4d_homogeneous / np.tile(points_4d_homogeneous[-1, :], (4,1))
 		points_3d = points_4d[:3, :].T
 		############################################
