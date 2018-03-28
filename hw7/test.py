@@ -38,8 +38,9 @@ videoWriter = cv2.VideoWriter(
     'ECEn631_Visual_Odometry.avi', cv2.VideoWriter_fourcc('M','P','E','G'), 20.0, size, isColor=True)
 
 img_id = 0
-prevPoints = []
-prevt = None
+FORGET_FACTOR = 1024
+prev_points = [None] * FORGET_FACTOR
+prev_t = [None] * FORGET_FACTOR
 
 # for img_id in xrange(4541):
 while(1):
@@ -60,22 +61,43 @@ while(1):
 	cur_t = vo.cur_t
 	px_ref = vo.px_ref
 	if(img_id > 2):
-		# x, y, z = cur_t[0], cur_t[1], cur_t[2]
-		for point in vo.points_3D:
-			# print(point)
-			draw_x, draw_y = point[0] + 300 + cur_t[0], point[1]+300 + cur_t[2]
-			cv2.circle(traj, (draw_x,draw_y), 2, (img_id*255/4540,255-img_id*255/4540,0), 1)
-		for point in prevPoints:
-			draw_x, draw_y = point[0] + 300 + prevt[0], point[1]+300 + prevt[2]
-			cv2.circle(traj, (draw_x,draw_y), 2, (0,0,0), 1)
-		prevPoints = vo.points_3D
-		prevt = cur_t
+		# Shift everything by one position
+		for i in range(FORGET_FACTOR-1, 0, -1):
+			prev_points[i] = prev_points[i-1]
+			prev_t[i] = prev_t[i-1]
+		# Update location 0
+		prev_points[0] = vo.points_3D
+		prev_t[0] = cur_t
+
+		# Draw circles and fade
+		for i in range(FORGET_FACTOR-1, 0, -1):
+			if prev_points[i] is None:
+				continue
+			for point in prev_points[i]:
+				draw_x, draw_y = point[0] + 300 + prev_t[i][0], point[1]+300 + prev_t[i][2]
+				cv2.circle(traj, (draw_x,draw_y), 2, (255/(i/4),255/(i/4),255/(i/4)), 1)
+		# Draw most recent 3d points
+		for point in prev_points[0]:
+			draw_x, draw_y = point[0] + 300 + prev_t[0][0], point[1]+300 + prev_t[0][2]
+			cv2.circle(traj, (draw_x,draw_y), 2, (255,255,255), 1)
+
+
+		# # x, y, z = cur_t[0], cur_t[1], cur_t[2]
+		# for point in vo.points_3D:
+		# 	# print(point)
+		# 	draw_x, draw_y = point[0] + 300 + cur_t[0], point[1]+300 + cur_t[2]
+		# 	cv2.circle(traj, (draw_x,draw_y), 2, (img_id*255/4540,255-img_id*255/4540,0), 1)
+		# for point in prevPoints:
+		# 	draw_x, draw_y = point[0] + 300 + prevt[0], point[1]+300 + prevt[2]
+		# 	cv2.circle(traj, (draw_x,draw_y), 2, (0,0,0), 1)
+		# prevPoints = vo.points_3D
+		# prevt = cur_t
 
 
 	else:
 		x, y, z = 0., 0., 0.
-		draw_x, draw_y = int(x)+300, int(z)+300
-		cv2.circle(traj, (draw_x,draw_y), 2, (img_id*255/4540,255-img_id*255/4540,0), 1)
+		# draw_x, draw_y = int(x)+300, int(z)+300
+		# cv2.circle(traj, (draw_x,draw_y), 2, (img_id*255/4540,255-img_id*255/4540,0), 1)
 		# cv2.rectangle(traj, (10, 20), (600, 60), (0,0,0), -1)
 	# true_x, true_y = int(vo.trueX)+290, int(vo.trueZ)+90
 
