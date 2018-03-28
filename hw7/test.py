@@ -75,11 +75,11 @@ while(1):
 				continue
 			for point in prev_points[i]:
 				draw_x, draw_y = point[0] + 300 + prev_t[i][0], point[1]+300 + prev_t[i][2]
-				cv2.circle(traj, (draw_x,draw_y), 2, (255/(i/4),255/(i/4),255/(i/4)), 1)
+				cv2.circle(traj, (draw_x,draw_y), 2, (max(255/(i/4),64),min(1024-i,64),max(255/(i/4), 64), 1))
 		# Draw most recent 3d points
 		for point in prev_points[0]:
 			draw_x, draw_y = point[0] + 300 + prev_t[0][0], point[1]+300 + prev_t[0][2]
-			cv2.circle(traj, (draw_x,draw_y), 2, (255,255,255), 1)
+			cv2.circle(traj, (draw_x,draw_y), 2, (255,0,255), 1)
 
 
 		# # x, y, z = cur_t[0], cur_t[1], cur_t[2]
@@ -105,7 +105,7 @@ while(1):
 	for i in px_ref:
 		# print(i)
 		coord = (i[0],i[1])
-		img = cv2.circle(img,coord,3,(255,190,40),-1)
+		img = cv2.circle(img,coord,3,(255,0,255),-1)
 
 
 	text = "Coordinates: x=%2fm y=%2fm z=%2fm"%(x,y,z)
