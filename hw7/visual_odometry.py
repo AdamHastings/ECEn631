@@ -91,7 +91,7 @@ class VisualOdometry:
 		self.px_cur_window = np.zeros(shape=(0,2))
 
 		for i in range(0, len(self.px_ref)):
-			if(self.px_ref[i][1] <= 400 and self.px_ref[i][1] >= 320):
+			if(self.px_ref[i][1] <= 720 and self.px_ref[i][1] >= 400):
 				self.px_ref_window = np.append(self.px_ref_window, np.array([[self.px_ref[i][0],self.px_ref[i][1]]]), axis=0)
 				self.px_cur_window = np.append(self.px_cur_window, np.array([[self.px_cur[i][0],self.px_cur[i][1]]]), axis=0)
 

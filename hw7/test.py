@@ -59,7 +59,7 @@ while(1):
 	# print(vo.points_3D)
 
 	cur_t = vo.cur_t
-	px_ref = vo.px_ref
+	px_ref = vo.px_ref_window
 	if(img_id > 2):
 		# Shift everything by one position
 		for i in range(FORGET_FACTOR-1, 0, -1):
@@ -74,13 +74,34 @@ while(1):
 			if prev_points[i] is None:
 				continue
 			for point in prev_points[i]:
-				draw_x, draw_y = point[0] + 300 + prev_t[i][0], point[1]+300 + prev_t[i][2]
-				cv2.circle(traj, (draw_x,draw_y), 2, (max(255/(i/4),64),min(1024-i,64),max(255/(i/4), 64), 1))
+
+				distance = np.linalg.norm(prev_t[i] - point)
+				threshold = 200
+				if (distance < threshold):
+					draw_x, draw_y = point[0] + 50 + prev_t[i][0], point[1]+100 + prev_t[i][2]
+					draw_x *= 2
+					draw_y *= 2
+					cv2.circle(traj, (draw_x,draw_y), 2, (max(255/(i/4),64),min(1024-i,64),max(255/(i/4), 64), 1))
 		# Draw most recent 3d points
 		for point in prev_points[0]:
-			draw_x, draw_y = point[0] + 300 + prev_t[0][0], point[1]+300 + prev_t[0][2]
-			cv2.circle(traj, (draw_x,draw_y), 2, (255,0,255), 1)
+			distance = np.linalg.norm(cur_t - point)
+			threshold = 200
+			if (distance < threshold):
+				draw_x, draw_y = point[0] + 50 + prev_t[0][0], point[1]+100 + prev_t[0][2]
+				draw_x *= 2
+				draw_y *= 2
+				cv2.circle(traj, (draw_x,draw_y), 2, (255,0,255), 1)
 
+
+		for i in range(FORGET_FACTOR-1, 0, -1):
+			if prev_t[i] is None:
+				continue
+			# print(point)
+			draw_x = prev_t[i][0] + 50
+			draw_y = prev_t[i][2] + 100
+			draw_x *= 2
+			draw_y *= 2
+			cv2.circle(traj, (draw_x,draw_y), 5, (0,165,255), 1)
 
 		# # x, y, z = cur_t[0], cur_t[1], cur_t[2]
 		# for point in vo.points_3D:
@@ -104,7 +125,7 @@ while(1):
 	# Add tracked features to video feed
 	for i in px_ref:
 		# print(i)
-		coord = (i[0],i[1])
+		coord = (int(i[0]),int(i[1]))
 		img = cv2.circle(img,coord,3,(255,0,255),-1)
 
 
