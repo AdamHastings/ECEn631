@@ -5,10 +5,11 @@ from visual_odometry import PinholeCamera, VisualOdometry
 
 # RMS: 1.936188835506069
 # camera matrix:
-#  [[1.02915033e+03 0.00000000e+00 6.23657540e+02]
-#  [0.00000000e+00 1.03483203e+03 3.31378673e+02]
-#  [0.00000000e+00 0.00000000e+00 1.00000000e+00]]
+K = np.array([[1029.15033, 0.00000000, 623.657540],
+ [0.00000000, 1034.83203, 331.378673],
+ [0.00000000, 0.00000000, 1.00000000]])
 # distortion coefficients:  [ 0.06349627 -0.44519871 -0.00914446 -0.0082998   0.49303731]
+dist_coeffs = [ 0.06349627, -0.44519871, -0.00914446, -0.0082998,   0.49303731]
 
 cap = cv2.VideoCapture('webcam_vid5.avi')
 
@@ -23,7 +24,8 @@ cap.set(cv2.CAP_PROP_FRAME_HEIGHT,cam_h);
 
 print(cam_w , cam_h)
 
-cam = PinholeCamera(cam_w, cam_h, 1029.15, 1034.83, cam_w/2, cam_h/2)
+
+cam = PinholeCamera(cam_w, cam_h, 1029.15, 1034.83, cam_w/2, cam_h/2, K, dist_coeffs[0], dist_coeffs[1], dist_coeffs[2], dist_coeffs[3], dist_coeffs[4])
 vo = VisualOdometry(cam)
 
 # cam = PinholeCamera(1241.0, 376.0, 718.8560, 718.8560, 607.1928, 185.2157)
@@ -51,24 +53,31 @@ while(1):
 	gray_img = cv2.cvtColor(img,cv2.COLOR_RGB2GRAY)
 
 	vo.update(gray_img,img_id)
+	# print(vo.points_3D)
 
 	cur_t = vo.cur_t
 	px_ref = vo.px_ref
 	if(img_id > 2):
-		x, y, z = cur_t[0], cur_t[1], cur_t[2]
+		# x, y, z = cur_t[0], cur_t[1], cur_t[2]
+		for point in vo.points_3D:
+			print(point)
+			draw_x, draw_y = point[0] + 300 + cur_t[0], point[1]+300 + cur_t[2]
+			cv2.circle(traj, (draw_x,draw_y), 2, (img_id*255/4540,255-img_id*255/4540,0), 1)
+
 	else:
 		x, y, z = 0., 0., 0.
-	draw_x, draw_y = int(x)+300, int(z)+300 
+		draw_x, draw_y = int(x)+300, int(z)+300
+		cv2.circle(traj, (draw_x,draw_y), 2, (img_id*255/4540,255-img_id*255/4540,0), 1)
+		# cv2.rectangle(traj, (10, 20), (600, 60), (0,0,0), -1)
 	# true_x, true_y = int(vo.trueX)+290, int(vo.trueZ)+90
 
+	# Add tracked features to video feed
 	for i in px_ref:
 		# print(i)
 		coord = (i[0],i[1])
-		img = cv2.circle(img,coord,5,(0,255,555),-1)
+		img = cv2.circle(img,coord,3,(255,190,40),-1)
 
-	cv2.circle(traj, (draw_x,draw_y), 2, (img_id*255/4540,255-img_id*255/4540,0), 1)
-	# cv2.circle(traj, (true_x,true_y), 1, (0,0,255), 2)
-	cv2.rectangle(traj, (10, 20), (600, 60), (0,0,0), -1)
+
 	text = "Coordinates: x=%2fm y=%2fm z=%2fm"%(x,y,z)
 	# cv2.putText(traj, text, (20,40), cv2.FONT_HERSHEY_PLAIN, 1, (255,255,255), 1, 8)
 

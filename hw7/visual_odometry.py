@@ -1,4 +1,5 @@
 import numpy as np 
+# np.set_printoptions(threshold=np.inf)
 import cv2
 
 STAGE_FIRST_FRAME = 0
@@ -21,7 +22,7 @@ def featureTracking(image_ref, image_cur, px_ref):
 
 
 class PinholeCamera:
-	def __init__(self, width, height, fx, fy, cx, cy, 
+	def __init__(self, width, height, fx, fy, cx, cy, K,
 				k1=0.0, k2=0.0, p1=0.0, p2=0.0, k3=0.0):
 		self.width = width
 		self.height = height
@@ -31,6 +32,7 @@ class PinholeCamera:
 		self.cy = cy
 		self.distortion = (abs(k1) > 0.0000001)
 		self.d = [k1, k2, p1, p2, k3]
+		self.K = K
 
 
 class VisualOdometry:
@@ -47,6 +49,7 @@ class VisualOdometry:
 		self.pp = (cam.cx, cam.cy)
 		self.trueX, self.trueY, self.trueZ = 0, 0, 0
 		self.detector = cv2.FastFeatureDetector_create(threshold=8, nonmaxSuppression=True)
+		self.points_3D = None
 		# with open(annotations) as f:
 		# 	self.annotations = f.readlines()
 
@@ -80,9 +83,32 @@ class VisualOdometry:
 		_, R, t, mask = cv2.recoverPose(E, self.px_cur, self.px_ref, focal=self.focal, pp = self.pp)
 		# absolute_scale = self.getAbsoluteScale(frame_id)
 		# if(absolute_scale > 0.1):
+
+		# Inserted Code
+		M_1 = np.hstack((R, t))
+		M_2 = np.hstack((np.eye(3,3), np.zeros((3,1))))
+
+		P_1 = np.dot(self.cam.K, M_1)
+		P_2 = np.dot(self.cam.K, M_2)
+
+		points_4d_homogeneous = cv2.triangulatePoints(P_1, P_2, self.px_ref.T, self.px_cur.T)
+		points_4d = points_4d_homogeneous / np.tile(points_4d_homogeneous[-1, :], (4,1))
+		points_3d = points_4d[:3, :].T
+
+		# Pass the 3D points up to the object to later be plotted.
+		points_3d = np.array(points_3d).astype(int)
+		print(points_3d)
+		self.points_3D = set()
+		for point in points_3d:
+			my_tuple = (point[0], point[2])
+			# print(my_tuple)
+			self.points_3D.add(my_tuple)
+
+
 		self.cur_t = self.cur_t + 0.5*self.cur_R.dot(t) 
 		self.cur_R = R.dot(self.cur_R)
-		print(self.px_ref.shape[0])
+		# print(self.cur_t)
+		# print(self.px_ref.shape[0])
 		if(self.px_ref.shape[0] < kMinNumFeature):
 			self.px_cur = self.detector.detect(self.new_frame)
 			self.px_cur = np.array([x.pt for x in self.px_cur], dtype=np.float32)
